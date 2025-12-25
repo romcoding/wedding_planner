@@ -1,5 +1,6 @@
 from src.models import db
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 class Guest(db.Model):
     """Guest model for wedding registration"""
@@ -11,6 +12,10 @@ class Guest(db.Model):
     last_name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), nullable=False, index=True)
     phone = db.Column(db.String(20))
+    
+    # Authentication
+    username = db.Column(db.String(80), unique=True, index=True)
+    password_hash = db.Column(db.String(255))
     
     # RSVP information
     rsvp_status = db.Column(db.String(20), default='pending')  # pending, confirmed, declined
@@ -31,14 +36,23 @@ class Guest(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_accessed = db.Column(db.DateTime)
     
-    def to_dict(self):
+    def set_password(self, password):
+        """Hash and set password"""
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        """Check password against hash"""
+        return check_password_hash(self.password_hash, password) if self.password_hash else False
+    
+    def to_dict(self, include_sensitive=False):
         """Convert guest to dictionary"""
-        return {
+        result = {
             'id': self.id,
             'first_name': self.first_name,
             'last_name': self.last_name,
             'email': self.email,
             'phone': self.phone,
+            'username': self.username if include_sensitive else None,
             'rsvp_status': self.rsvp_status,
             'attendance_type': self.attendance_type,
             'number_of_guests': self.number_of_guests,

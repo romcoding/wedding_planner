@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { GuestAuthProvider, useGuestAuth } from './contexts/GuestAuthContext'
 import AdminLayout from './layouts/AdminLayout'
 import GuestLayout from './layouts/GuestLayout'
 import LoginPage from './pages/admin/LoginPage'
@@ -9,8 +10,32 @@ import TasksPage from './pages/admin/TasksPage'
 import CostsPage from './pages/admin/CostsPage'
 import ContentPage from './pages/admin/ContentPage'
 import AnalyticsPage from './pages/admin/AnalyticsPage'
-import GuestRegistration from './pages/guest/Registration'
+import WeddingManagement from './pages/admin/WeddingManagement'
+import GuestHome from './pages/guest/Home'
+import GuestLogin from './pages/guest/GuestLogin'
 import GuestInfo from './pages/guest/Info'
+
+function GuestRoutes() {
+  const { guest, loading } = useGuestAuth()
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg">Loading...</div>
+      </div>
+    )
+  }
+
+  return (
+    <Routes>
+      <Route path="/login" element={guest ? <Navigate to="/" replace /> : <GuestLogin />} />
+      <Route path="/" element={<GuestLayout />}>
+        <Route index element={guest ? <GuestHome /> : <Navigate to="/login" replace />} />
+        <Route path="info" element={guest ? <GuestInfo /> : <Navigate to="/login" replace />} />
+      </Route>
+    </Routes>
+  )
+}
 
 function AppRoutes() {
   const { user, loading } = useAuth()
@@ -25,11 +50,8 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Guest Routes (Public) */}
-      <Route path="/" element={<GuestLayout />}>
-        <Route index element={<GuestRegistration />} />
-        <Route path="info" element={<GuestInfo />} />
-      </Route>
+      {/* Guest Routes (Protected) */}
+      <Route path="/*" element={<GuestRoutes />} />
 
       {/* Admin Routes (Protected) */}
       <Route
@@ -43,14 +65,13 @@ function AppRoutes() {
         <Route path="costs" element={<CostsPage />} />
         <Route path="content" element={<ContentPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="wedding" element={<WeddingManagement />} />
       </Route>
 
       <Route
         path="/admin/login"
         element={user ? <Navigate to="/admin/dashboard" replace /> : <LoginPage />}
       />
-
-      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
@@ -58,10 +79,11 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <GuestAuthProvider>
+        <AppRoutes />
+      </GuestAuthProvider>
     </AuthProvider>
   )
 }
 
 export default App
-

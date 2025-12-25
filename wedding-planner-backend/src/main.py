@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os
 from src.models import db
 from src.routes.auth import auth_bp
+from src.routes.guest_auth import guest_auth_bp
 from src.routes.guests import guests_bp
 from src.routes.tasks import tasks_bp
 from src.routes.costs import costs_bp
@@ -43,6 +44,7 @@ def create_app():
     
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(guest_auth_bp, url_prefix='/api/guest-auth')
     app.register_blueprint(guests_bp, url_prefix='/api/guests')
     app.register_blueprint(tasks_bp, url_prefix='/api/tasks')
     app.register_blueprint(costs_bp, url_prefix='/api/costs')

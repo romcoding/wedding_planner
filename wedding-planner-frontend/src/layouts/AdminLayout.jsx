@@ -7,6 +7,7 @@ import {
   DollarSign, 
   FileText, 
   BarChart3,
+  Heart,
   LogOut
 } from 'lucide-react'
 
@@ -16,7 +17,8 @@ export default function AdminLayout() {
 
   const navItems = [
     { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/admin/guests', icon: Users, label: 'Guests' },
+    { path: '/admin/guests', icon: Users, label: 'RSVP Requests' },
+    { path: '/admin/wedding', icon: Heart, label: 'Wedding Management' },
     { path: '/admin/tasks', icon: CheckSquare, label: 'Tasks' },
     { path: '/admin/costs', icon: DollarSign, label: 'Costs' },
     { path: '/admin/content', icon: FileText, label: 'Content' },
