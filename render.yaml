@@ -4,6 +4,7 @@ services:
     env: python
     buildCommand: pip install -r wedding-planner-backend/requirements.txt
     startCommand: cd wedding-planner-backend && python src/main.py
+    rootDir: .
     envVars:
       - key: DATABASE_URL
         sync: false
