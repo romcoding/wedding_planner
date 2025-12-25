@@ -1,0 +1,14 @@
+{
+  "buildCommand": "cd wedding-planner-frontend && pnpm install && pnpm run build",
+  "outputDirectory": "wedding-planner-frontend/dist",
+  "devCommand": "cd wedding-planner-frontend && pnpm run dev",
+  "installCommand": "cd wedding-planner-frontend && pnpm install",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+

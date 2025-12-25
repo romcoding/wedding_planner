@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: wedding-planner-backend
+    env: python
+    buildCommand: pip install -r wedding-planner-backend/requirements.txt
+    startCommand: cd wedding-planner-backend && python src/main.py
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
+      - key: PORT
+        value: 10000
+
