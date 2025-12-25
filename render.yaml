@@ -3,7 +3,7 @@ services:
     name: wedding-planner-backend
     env: python
     buildCommand: pip install -r wedding-planner-backend/requirements.txt
-    startCommand: cd wedding-planner-backend && python src/main.py
+    startCommand: cd wedding-planner-backend && PYTHONPATH=$(pwd):$PYTHONPATH python src/main.py
     rootDir: .
     envVars:
       - key: DATABASE_URL
