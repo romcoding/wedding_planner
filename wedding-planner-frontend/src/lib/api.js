@@ -9,9 +9,12 @@ const api = axios.create({
   },
 })
 
-// Add token to requests if available
+// Add token to requests if available (admin or guest)
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token')
+  // Try admin token first, then guest token
+  const adminToken = localStorage.getItem('access_token')
+  const guestToken = localStorage.getItem('guest_token')
+  const token = adminToken || guestToken
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -23,9 +26,19 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('user')
-      window.location.href = '/admin/login'
+      // Check if it's an admin or guest request
+      const isAdmin = localStorage.getItem('access_token')
+      const isGuest = localStorage.getItem('guest_token')
+      
+      if (isAdmin) {
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('user')
+        window.location.href = '/admin/login'
+      } else if (isGuest) {
+        localStorage.removeItem('guest_token')
+        localStorage.removeItem('guest')
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }

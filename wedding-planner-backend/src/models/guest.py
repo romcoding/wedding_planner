@@ -65,4 +65,5 @@ class Guest(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'last_accessed': self.last_accessed.isoformat() if self.last_accessed else None
         }
+        return result
 
