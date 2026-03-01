@@ -5,6 +5,7 @@ import {
   CalendarPlus,
   Camera,
   Check,
+  Copy,
   ChevronLeft,
   ChevronRight,
   Heart,
@@ -106,6 +107,7 @@ export default function RSVP({ token: tokenOverride, embedded = false, onClose }
   const [loading, setLoading] = useState(true)
   const [showDeclineConfirm, setShowDeclineConfirm] = useState(false)
   const [containerHeight, setContainerHeight] = useState(undefined)
+  const [promoCopied, setPromoCopied] = useState(false)
 
   const stepContainerRef = useRef(null)
   const storageKey = useMemo(() => (token ? `wedding_pass_progress:${token}` : null), [token])
@@ -334,6 +336,7 @@ export default function RSVP({ token: tokenOverride, embedded = false, onClose }
 
   // Get booking link from content
   const bookingLink = contentData?.guest_accommodation_booking_link || ''
+  const promoCode = contentData?.guest_accommodation_promo_code || ''
 
   // Get images
   const heroImage = images?.find((img) => img.position === 'hero' && img.is_active && img.is_public)
@@ -420,7 +423,7 @@ export default function RSVP({ token: tokenOverride, embedded = false, onClose }
     const base = ['attendance']
     if (isCoupleInvite) base.push('couple')
     if (isGroupInvite) base.push('group')
-    base.push('dietary', 'notes', 'done')
+    base.push('overnight', 'dietary', 'notes', 'done')
     return base
   }, [isCoupleInvite, isGroupInvite])
 
@@ -581,6 +584,24 @@ export default function RSVP({ token: tokenOverride, embedded = false, onClose }
 
   const handleOvernightContinue = () => {
     goNext()
+  }
+
+  const copyPromoCodeToClipboard = async () => {
+    if (!promoCode) return
+    try {
+      await navigator.clipboard.writeText(promoCode)
+      setPromoCopied(true)
+      setTimeout(() => setPromoCopied(false), 2000)
+    } catch {
+      const textArea = document.createElement('textarea')
+      textArea.value = promoCode
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setPromoCopied(true)
+      setTimeout(() => setPromoCopied(false), 2000)
+    }
   }
 
   const handleDietaryNext = async () => {
@@ -999,6 +1020,77 @@ export default function RSVP({ token: tokenOverride, embedded = false, onClose }
                         </span>
                       </PrimaryButton>
                     </div>
+                  </StepShell>
+                )}
+
+                {currentStepKey === 'overnight' && (
+                  <StepShell title={tp('qOvernight')} subtitle={tp('qOvernightSub')}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <PrimaryButton
+                        onClick={() => handleOvernight(true)}
+                        disabled={updateRSVPMutation.isPending || isStepFading}
+                      >
+                        {t('yes')}
+                      </PrimaryButton>
+                      <PrimaryButton
+                        variant="secondary"
+                        onClick={() => handleOvernight(false)}
+                        disabled={updateRSVPMutation.isPending || isStepFading}
+                      >
+                        {t('no')}
+                      </PrimaryButton>
+                    </div>
+
+                    {pass.overnight_stay && (
+                      <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4 space-y-3">
+                        <p className="text-sm text-gray-700">{t('bookingLinkHint')}</p>
+
+                        {!!promoCode && (
+                          <div>
+                            <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">
+                              {t('promoCodeLabel')}
+                            </div>
+                            <div className="flex items-center justify-between gap-2 rounded-lg border border-gray-200 px-3 py-2">
+                              <div className="text-sm font-semibold text-gray-900 break-all">{promoCode}</div>
+                              <button
+                                type="button"
+                                onClick={copyPromoCodeToClipboard}
+                                className="p-2 rounded-md hover:bg-gray-100"
+                                title={promoCopied ? t('copied') : t('copyToClipboard')}
+                              >
+                                {promoCopied ? (
+                                  <Check className="w-4 h-4 text-green-600" />
+                                ) : (
+                                  <Copy className="w-4 h-4 text-gray-700" />
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {bookingLink ? (
+                            <PrimaryButton
+                              onClick={() => window.open(bookingLink, '_blank', 'noopener,noreferrer')}
+                              disabled={isStepFading}
+                              className="text-base"
+                            >
+                              {t('guestAccommodationBookNow')}
+                            </PrimaryButton>
+                          ) : (
+                            <div className="text-sm text-gray-500">{t('bookingLinkComingSoon')}</div>
+                          )}
+                          <PrimaryButton
+                            variant="secondary"
+                            onClick={handleOvernightContinue}
+                            disabled={isStepFading}
+                            className="text-base"
+                          >
+                            {t('skipForNow')}
+                          </PrimaryButton>
+                        </div>
+                      </div>
+                    )}
                   </StepShell>
                 )}
 

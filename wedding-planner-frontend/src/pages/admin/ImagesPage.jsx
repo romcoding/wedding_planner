@@ -140,6 +140,7 @@ const ImagesPage = () => {
   const [guestAccommodationVenueId, setGuestAccommodationVenueId] = useState('')
   const [guestAccommodationDetails, setGuestAccommodationDetails] = useState({ en: '', de: '', fr: '' })
   const [guestAccommodationBookingLink, setGuestAccommodationBookingLink] = useState('')
+  const [guestAccommodationPromoCode, setGuestAccommodationPromoCode] = useState('')
   
   // Gift Registry state
   const [giftIban, setGiftIban] = useState({ en: '', de: '', fr: '' })
@@ -333,6 +334,7 @@ const ImagesPage = () => {
       fr: String(guestPortalSettings.guestAccommodationDetails?.fr || ''),
     })
     setGuestAccommodationBookingLink(String(guestPortalSettings.guestAccommodationBookingLink || ''))
+    setGuestAccommodationPromoCode(String(guestPortalSettings.guestAccommodationPromoCode || ''))
     
     // Gift Registry
     setGiftIban({
@@ -381,6 +383,7 @@ const ImagesPage = () => {
         guestAccommodationVenueId: guestAccommodationVenueId || '',
         guestAccommodationDetails,
         guestAccommodationBookingLink: guestAccommodationBookingLink || '',
+        guestAccommodationPromoCode: guestAccommodationPromoCode || '',
         // Gift Registry
         giftIban,
         giftMessage,
@@ -1187,6 +1190,20 @@ const ImagesPage = () => {
               />
               <p className="text-xs text-gray-500 mt-1">
                 Add a booking link for guests to reserve rooms. If empty, guests will see "Stay tuned for booking information".
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Promo code (optional)</label>
+              <input
+                type="text"
+                value={guestAccommodationPromoCode}
+                onChange={(e) => setGuestAccommodationPromoCode(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900"
+                placeholder="e.g. Hochzeit Elvira & Roman 10.10.2026 ELE"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Displayed to guests in the wizard and Accommodation section with a copy button.
               </p>
             </div>
         </div>

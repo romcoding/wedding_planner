@@ -232,6 +232,7 @@ const translations = {
     guestAccommodationBookingTitle: 'Room Booking',
     guestAccommodationBookNow: 'Book your room',
     guestAccommodationBookingStayTuned: 'Stay tuned for booking information',
+    promoCodeLabel: 'Promo code',
 
     // Guest portal - Event & Gifts
     guestGiftsTitle: 'Event & Gifts',
@@ -581,6 +582,7 @@ const translations = {
     guestAccommodationBookingTitle: 'Zimmerreservierung',
     guestAccommodationBookNow: 'Zimmer buchen',
     guestAccommodationBookingStayTuned: 'Buchungsinformationen folgen',
+    promoCodeLabel: 'Promocode',
 
     // Guest portal - Event & Gifts
     guestGiftsTitle: 'Event & Geschenke',
@@ -922,6 +924,7 @@ const translations = {
     guestAccommodationBookingTitle: 'Réservation de chambre',
     guestAccommodationBookNow: 'Réserver une chambre',
     guestAccommodationBookingStayTuned: 'Informations de réservation à venir',
+    promoCodeLabel: 'Code promo',
 
     // Guest portal - Event & Gifts
     guestGiftsTitle: 'Événement & cadeaux',

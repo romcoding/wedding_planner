@@ -241,6 +241,7 @@ def get_guest_portal_settings():
         'guest_accommodation_details',
         'guest_accommodation_map_address',
         'guest_accommodation_booking_link',
+        'guest_accommodation_promo_code',
         # Gift Registry
         'guest_gift_iban',
         'guest_gift_message',
@@ -282,6 +283,7 @@ def get_guest_portal_settings():
         'guestAccommodationDetails': pack('guest_accommodation_details'),
         'guestAccommodationMapAddress': one('guest_accommodation_map_address'),
         'guestAccommodationBookingLink': one('guest_accommodation_booking_link'),
+        'guestAccommodationPromoCode': one('guest_accommodation_promo_code'),
         # Gift Registry
         'giftIban': pack('guest_gift_iban'),
         'giftMessage': pack('guest_gift_message'),
@@ -310,6 +312,7 @@ def set_guest_portal_settings():
     guest_accommodation_venue_id = str(data.get('guestAccommodationVenueId') or '').strip()
     guest_accommodation_details = data.get('guestAccommodationDetails') or {}
     guest_accommodation_booking_link = str(data.get('guestAccommodationBookingLink') or '').strip()
+    guest_accommodation_promo_code = str(data.get('guestAccommodationPromoCode') or '').strip()
     
     # Gift Registry
     gift_iban = data.get('giftIban') or {}
@@ -493,6 +496,11 @@ def set_guest_portal_settings():
         'guest_accommodation_booking_link',
         'Guest: Accommodation booking link',
         guest_accommodation_booking_link, guest_accommodation_booking_link, guest_accommodation_booking_link
+    )
+    _upsert_public_content_key(
+        'guest_accommodation_promo_code',
+        'Guest: Accommodation promo code',
+        guest_accommodation_promo_code, guest_accommodation_promo_code, guest_accommodation_promo_code
     )
 
     # Gift Registry

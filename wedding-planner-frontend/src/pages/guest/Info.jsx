@@ -27,6 +27,7 @@ export default function GuestInfo() {
   const [isEditing, setIsEditing] = useState(false)
   const [showWizard, setShowWizard] = useState(false)
   const [ibanCopied, setIbanCopied] = useState(false)
+  const [promoCopied, setPromoCopied] = useState(false)
   const [travelMode, setTravelMode] = useState('car')
   const [isPageLoading, setIsPageLoading] = useState(true)
   const [imagesPreloaded, setImagesPreloaded] = useState(false)
@@ -178,6 +179,24 @@ export default function GuestInfo() {
       document.body.removeChild(textArea)
       setIbanCopied(true)
       setTimeout(() => setIbanCopied(false), 2000)
+    }
+  }
+
+  const copyPromoCodeToClipboard = async (promoCode) => {
+    if (!promoCode) return
+    try {
+      await navigator.clipboard.writeText(promoCode)
+      setPromoCopied(true)
+      setTimeout(() => setPromoCopied(false), 2000)
+    } catch {
+      const textArea = document.createElement('textarea')
+      textArea.value = promoCode
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setPromoCopied(true)
+      setTimeout(() => setPromoCopied(false), 2000)
     }
   }
 
@@ -649,6 +668,31 @@ export default function GuestInfo() {
                   ) : (
                     <div style={{ color: 'var(--wp-primary)', opacity: 0.7 }}>
                       {t('guestAccommodationBookingStayTuned')}
+                    </div>
+                  )}
+
+                  {readContent('guest_accommodation_promo_code') && (
+                    <div className="mt-4 max-w-xl mx-auto rounded-xl border border-black/10 bg-white/70 p-3">
+                      <div className="text-xs uppercase tracking-wide mb-1" style={{ color: 'var(--wp-primary)', opacity: 0.7 }}>
+                        {t('promoCodeLabel')}
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm font-semibold break-all text-left" style={{ color: 'var(--wp-primary)' }}>
+                          {readContent('guest_accommodation_promo_code')}
+                        </div>
+                        <button
+                          onClick={() => copyPromoCodeToClipboard(readContent('guest_accommodation_promo_code'))}
+                          className="p-2 rounded-lg transition-all hover:bg-black/5"
+                          style={{ color: 'var(--wp-primary)' }}
+                          title={promoCopied ? (t('copied') || 'Copied!') : (t('copyToClipboard') || 'Copy to clipboard')}
+                        >
+                          {promoCopied ? (
+                            <Check className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <Copy className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
