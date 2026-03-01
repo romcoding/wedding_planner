@@ -1,9 +1,12 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.models import db, Guest, User, Invitation, GuestPhoto, SeatAssignment, Message, PageView, Visit, ReminderSent
 from datetime import datetime
 import json
 import logging
+import csv
+import io
+import os
 from src.utils.rbac import require_roles
 
 guests_bp = Blueprint('guests', __name__)
@@ -191,6 +194,102 @@ def get_guests():
         guests_data.append(guest_dict)
     
     return jsonify(guests_data), 200
+
+@guests_bp.route('/export', methods=['GET'])
+@jwt_required()
+def export_guests():
+    """Export guests as CSV (admin/planner)."""
+    user, err = require_roles(['admin', 'planner'])
+    if err:
+        return err
+
+    rsvp_status = request.args.get('rsvp_status')
+    overnight_stay = request.args.get('overnight_stay')
+
+    query = Guest.query
+    if rsvp_status:
+        query = query.filter_by(rsvp_status=rsvp_status)
+    if overnight_stay is not None:
+        query = query.filter_by(overnight_stay=overnight_stay.lower() == 'true')
+
+    guests = query.order_by(Guest.registered_at.desc()).all()
+
+    frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+    tokens_generated = False
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        'id',
+        'first_name',
+        'last_name',
+        'email',
+        'phone',
+        'language',
+        'rsvp_status',
+        'number_of_guests',
+        'overnight_stay',
+        'invitee_names',
+        'attending_names',
+        'dietary_restrictions',
+        'allergies',
+        'special_requests',
+        'music_wish',
+        'address',
+        'notes',
+        'registered_at',
+        'updated_at',
+        'last_accessed',
+        'rsvp_link',
+    ])
+
+    for guest in guests:
+        if not guest.unique_token:
+            guest.unique_token = Guest.generate_unique_token()
+            while Guest.query.filter_by(unique_token=guest.unique_token).filter(Guest.id != guest.id).first():
+                guest.unique_token = Guest.generate_unique_token()
+            tokens_generated = True
+
+        invitee_names = ', '.join(guest.get_invitee_names())
+        attending_names = ', '.join(guest.get_attending_names())
+        rsvp_link = f"{frontend_url}/rsvp/{guest.unique_token}" if guest.unique_token else ''
+
+        writer.writerow([
+            guest.id,
+            guest.first_name or '',
+            guest.last_name or '',
+            guest.email or '',
+            guest.phone or '',
+            guest.language or '',
+            guest.rsvp_status or '',
+            guest.number_of_guests or '',
+            'Yes' if guest.overnight_stay else 'No',
+            invitee_names,
+            attending_names,
+            guest.dietary_restrictions or '',
+            guest.allergies or '',
+            guest.special_requests or '',
+            guest.music_wish or '',
+            guest.address or '',
+            guest.notes or '',
+            guest.registered_at.isoformat() if guest.registered_at else '',
+            guest.updated_at.isoformat() if guest.updated_at else '',
+            guest.last_accessed.isoformat() if guest.last_accessed else '',
+            rsvp_link,
+        ])
+
+    if tokens_generated:
+        db.session.commit()
+
+    csv_bytes = output.getvalue().encode('utf-8-sig')
+    buffer = io.BytesIO(csv_bytes)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype='text/csv; charset=utf-8',
+        as_attachment=True,
+        download_name='wedding_guests.csv',
+    )
 
 @guests_bp.route('/token/<token>', methods=['GET'])
 def get_guest_by_token(token):

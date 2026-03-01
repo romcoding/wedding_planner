@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../lib/api'
-import { CheckCircle, XCircle, Clock, Search, Filter, PlusCircle, Copy, QrCode, Mail, Link as LinkIcon } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, Search, Filter, PlusCircle, Copy, QrCode, Mail, Link as LinkIcon, Download } from 'lucide-react'
 import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 
@@ -88,6 +88,27 @@ export default function GuestsPage() {
     },
   })
 
+  const exportGuestsMutation = useMutation({
+    mutationFn: async () => {
+      return api.get('/guests/export', { responseType: 'blob' })
+    },
+    onSuccess: (response) => {
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', 'wedding_guests.csv')
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    },
+    onError: (err) => {
+      const msg = err?.response?.data?.error || err?.message || 'Failed to export guests'
+      alert(msg)
+    },
+  })
+
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text)
     alert('Link copied to clipboard!')
@@ -165,6 +186,14 @@ export default function GuestsPage() {
           <div className="text-sm text-gray-500">
             Total: {guests?.length || 0} guests
           </div>
+          <button
+            onClick={() => exportGuestsMutation.mutate()}
+            disabled={exportGuestsMutation.isPending}
+            className="flex items-center gap-2 bg-white text-gray-900 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+          >
+            <Download className="w-5 h-5" />
+            {exportGuestsMutation.isPending ? 'Exporting...' : 'Export CSV'}
+          </button>
           <button
             onClick={() => {
               setInviteType('individual')
@@ -474,21 +503,21 @@ export default function GuestsPage() {
       <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
             <input
               type="text"
               placeholder="Search by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+              className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white text-gray-900"
             >
               <option value="all">All Status</option>
               <option value="confirmed">Confirmed</option>
