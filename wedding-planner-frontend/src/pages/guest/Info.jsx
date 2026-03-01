@@ -612,13 +612,6 @@ export default function GuestInfo() {
               </div>
 
               <div className="space-y-8">
-                {/* Accommodation Details */}
-                {(readContent('guest_accommodation_details') || '').trim() && (
-                  <div className="text-center whitespace-pre-wrap break-words" style={{ color: 'var(--wp-primary)' }}>
-                    {readContent('guest_accommodation_details')}
-                  </div>
-                )}
-
                 {/* Venue Info */}
                 {readContent('guest_accommodation_venue_name') && (
                   <div className="text-center">
@@ -655,6 +648,11 @@ export default function GuestInfo() {
                       {t('guestAccommodationBookingTitle')}
                     </div>
                   </div>
+                  {(readContent('guest_accommodation_details') || '').trim() && (
+                    <div className="mb-4 text-center whitespace-pre-wrap break-words" style={{ color: 'var(--wp-primary)' }}>
+                      {readContent('guest_accommodation_details')}
+                    </div>
+                  )}
                   {readContent('guest_accommodation_booking_link') ? (
                     <a
                       href={readContent('guest_accommodation_booking_link')}
