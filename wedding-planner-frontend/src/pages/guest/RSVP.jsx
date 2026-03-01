@@ -872,7 +872,6 @@ export default function RSVP({ token: tokenOverride, embedded = false, onClose }
                           <MapPin className="w-4 h-4 flex-shrink-0" />
                           {t('attendanceVenueHint')}
                         </span>
-                        {tp('qCelebrateSub')}
                       </>
                     }
                   >
