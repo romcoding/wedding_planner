@@ -261,7 +261,7 @@ const translations = {
     guestGiftsInfoBody:
       'Your presence means the world to us. If you’d like to give something, you’ll find the details here.',
     giftWishlistTitle: "Things we'd like to do",
-    activitySkydiving: 'Skydiving',
+    activitySkydiving: 'Travelling',
     activityGolf: 'Golf',
     activityTheater: 'Theater',
     activityTennis: 'Tennis',
@@ -611,7 +611,7 @@ const translations = {
     guestGiftsInfoBody:
       'Deine Anwesenheit ist für uns das schönste Geschenk. Falls du trotzdem etwas schenken möchtest, findest du hier die Infos.',
     giftWishlistTitle: 'Was wir gerne erleben möchten',
-    activitySkydiving: 'Fallschirmspringen',
+    activitySkydiving: 'Reisen',
     activityGolf: 'Golf',
     activityTheater: 'Theater',
     activityTennis: 'Tennis',
@@ -953,7 +953,7 @@ const translations = {
     guestGiftsInfoBody:
       'Votre présence est le plus beau des cadeaux. Si vous souhaitez offrir quelque chose, vous trouverez les informations ici.',
     giftWishlistTitle: 'Ce que nous aimerions faire',
-    activitySkydiving: 'Parachutisme',
+    activitySkydiving: 'Voyage',
     activityGolf: 'Golf',
     activityTheater: 'Théâtre',
     activityTennis: 'Tennis',
