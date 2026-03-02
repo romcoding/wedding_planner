@@ -11,6 +11,14 @@ export default function GuestsPage() {
   const [selectedGuest, setSelectedGuest] = useState(null)
   const [showQRCode, setShowQRCode] = useState(null)
   const [viewGuest, setViewGuest] = useState(null)
+  const [editGuest, setEditGuest] = useState(null)
+  const [editGuestForm, setEditGuestForm] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    language: 'en',
+  })
   const queryClient = useQueryClient()
   const [inviteType, setInviteType] = useState('individual') // individual | couple | group
   const [groupSize, setGroupSize] = useState(3)
@@ -113,6 +121,11 @@ export default function GuestsPage() {
     navigator.clipboard.writeText(text)
     alert('Link copied to clipboard!')
   }
+
+  const isPlaceholderEmail = (email) =>
+    typeof email === 'string' && email.endsWith('@placeholder.local')
+
+  const displayEmail = (email) => (email && !isPlaceholderEmail(email) ? email : '')
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -252,11 +265,10 @@ export default function GuestsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email *
+                  Email (optional)
                 </label>
                 <input
                   type="email"
-                  required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -476,11 +488,13 @@ export default function GuestsPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => {
-                  if (selectedGuest.email) {
-                    window.location.href = `mailto:${selectedGuest.email}?subject=Your Wedding RSVP&body=Hi ${selectedGuest.first_name},%0D%0A%0D%0APlease use this link to RSVP: ${selectedGuest.rsvp_link}`
+                  const email = displayEmail(selectedGuest.email)
+                  if (email) {
+                    window.location.href = `mailto:${email}?subject=Your Wedding RSVP&body=Hi ${selectedGuest.first_name},%0D%0A%0D%0APlease use this link to RSVP: ${selectedGuest.rsvp_link}`
                   }
                 }}
-                className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                disabled={!displayEmail(selectedGuest.email)}
               >
                 <Mail className="w-4 h-4" />
                 Email Link
@@ -583,7 +597,7 @@ export default function GuestsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{guest.email}</div>
+                      <div className="text-sm text-gray-900">{displayEmail(guest.email) || '—'}</div>
                       {guest.phone && (
                         <div className="text-xs text-gray-500">{guest.phone}</div>
                       )}
@@ -699,6 +713,22 @@ export default function GuestsPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
+                            setEditGuest(guest)
+                            setEditGuestForm({
+                              first_name: guest.first_name || '',
+                              last_name: guest.last_name || '',
+                              email: displayEmail(guest.email),
+                              phone: guest.phone || '',
+                              language: guest.language || 'en',
+                            })
+                          }}
+                          className="text-blue-600 hover:text-blue-900 text-xs"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
                             if (window.confirm('Are you sure you want to delete this guest?')) {
                               deleteGuestMutation.mutate(guest.id)
                             }
@@ -749,7 +779,7 @@ export default function GuestsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="rounded-xl border border-gray-200 p-4">
                   <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Contact</div>
-                  <div className="mt-2 text-sm text-gray-900">{viewGuest.email || '—'}</div>
+                  <div className="mt-2 text-sm text-gray-900">{displayEmail(viewGuest.email) || '—'}</div>
                   <div className="mt-1 text-sm text-gray-700">{viewGuest.phone || '—'}</div>
                 </div>
                 <div className="rounded-xl border border-gray-200 p-4">
@@ -806,6 +836,121 @@ export default function GuestsPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Guest Modal */}
+      {editGuest && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onMouseDown={() => setEditGuest(null)}
+        >
+          <div
+            className="w-full max-w-xl rounded-2xl bg-white shadow-xl border border-gray-200"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 p-6 border-b border-gray-100">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Edit guest details</h3>
+                <p className="text-sm text-gray-600">Update contact details and language preference.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditGuest(null)}
+                className="px-3 py-2 rounded-lg bg-gray-100 text-gray-900 hover:bg-gray-200 text-sm font-medium"
+              >
+                Close
+              </button>
+            </div>
+            <form
+              className="p-6 space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault()
+                updateGuestMutation.mutate(
+                  { id: editGuest.id, data: editGuestForm },
+                  {
+                    onSuccess: () => {
+                      setEditGuest(null)
+                    },
+                    onError: (err) => {
+                      const msg = err?.response?.data?.error || err?.message || 'Failed to update guest'
+                      alert(msg)
+                    },
+                  }
+                )
+              }}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editGuestForm.first_name}
+                    onChange={(e) => setEditGuestForm((p) => ({ ...p, first_name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editGuestForm.last_name}
+                    onChange={(e) => setEditGuestForm((p) => ({ ...p, last_name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email (optional)</label>
+                <input
+                  type="email"
+                  value={editGuestForm.email}
+                  onChange={(e) => setEditGuestForm((p) => ({ ...p, email: e.target.value }))}
+                  placeholder="Add later if not available yet"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={editGuestForm.phone}
+                  onChange={(e) => setEditGuestForm((p) => ({ ...p, phone: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Language</label>
+                <select
+                  value={editGuestForm.language}
+                  onChange={(e) => setEditGuestForm((p) => ({ ...p, language: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="en">English</option>
+                  <option value="de">Deutsch (German)</option>
+                  <option value="fr">Français (French)</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditGuest(null)}
+                  className="bg-gray-200 text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-300 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updateGuestMutation.isPending}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {updateGuestMutation.isPending ? 'Saving...' : 'Save changes'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

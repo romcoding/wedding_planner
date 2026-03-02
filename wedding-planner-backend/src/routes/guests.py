@@ -42,6 +42,21 @@ def update_rsvp():
     data = request.get_json()
     
     # Update RSVP fields
+    if 'first_name' in data:
+        guest.first_name = (data.get('first_name') or '').strip() or guest.first_name
+    if 'last_name' in data:
+        guest.last_name = (data.get('last_name') or '').strip() or guest.last_name
+    if 'email' in data:
+        email = (data.get('email') or '').strip()
+        if email:
+            existing = Guest.query.filter(
+                Guest.email == email,
+                Guest.id != guest.id
+            ).first()
+            if existing:
+                return jsonify({'error': 'Email already in use by another guest'}), 400
+        # Keep email optional here so guests can add it later.
+        guest.email = email
     if 'rsvp_status' in data:
         guest.rsvp_status = data['rsvp_status']
     if 'overnight_stay' in data:
@@ -94,13 +109,8 @@ def create_guest():
     
     data = request.get_json()
     
-    if not data or not data.get('email') or not data.get('first_name') or not data.get('last_name'):
-        return jsonify({'error': 'Email, first name, and last name are required'}), 400
-    
-    # Check if guest already exists
-    existing_guest = Guest.query.filter_by(email=data['email']).first()
-    if existing_guest:
-        return jsonify({'error': 'Guest with this email already exists'}), 400
+    if not data or not data.get('first_name') or not data.get('last_name'):
+        return jsonify({'error': 'First name and last name are required'}), 400
     
     # Generate unique token
     unique_token = Guest.generate_unique_token()
@@ -108,6 +118,16 @@ def create_guest():
     while Guest.query.filter_by(unique_token=unique_token).first():
         unique_token = Guest.generate_unique_token()
     
+    email = (data.get('email') or '').strip()
+    # Email is optional at creation; generate an internal placeholder
+    # so admins can add the real email later.
+    if not email:
+        email = f"guest-{unique_token[:16]}@placeholder.local"
+    else:
+        existing_guest = Guest.query.filter_by(email=email).first()
+        if existing_guest:
+            return jsonify({'error': 'Guest with this email already exists'}), 400
+
     invitee_names = data.get('invitee_names')
     invitee_json = None
     if isinstance(invitee_names, list):
@@ -117,7 +137,7 @@ def create_guest():
 
     # Create guest with all admin-provided info
     guest = Guest(
-        email=data['email'],
+        email=email,
         first_name=data['first_name'],
         last_name=data['last_name'],
         phone=data.get('phone'),
@@ -375,7 +395,15 @@ def update_guest(guest_id):
     if 'last_name' in data:
         guest.last_name = data['last_name']
     if 'email' in data:
-        guest.email = data['email']
+        email = (data.get('email') or '').strip()
+        if email:
+            existing_guest = Guest.query.filter(
+                Guest.email == email,
+                Guest.id != guest.id
+            ).first()
+            if existing_guest:
+                return jsonify({'error': 'Guest with this email already exists'}), 400
+            guest.email = email
     if 'phone' in data:
         guest.phone = data['phone']
     if 'rsvp_status' in data:
@@ -396,6 +424,8 @@ def update_guest(guest_id):
         guest.address = data['address']
     if 'notes' in data:
         guest.notes = data['notes']
+    if 'language' in data:
+        guest.language = data['language']
     if 'invitee_names' in data:
         names = data.get('invitee_names')
         if names is None:
