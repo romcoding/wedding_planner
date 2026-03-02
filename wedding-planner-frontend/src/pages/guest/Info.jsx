@@ -33,7 +33,6 @@ export default function GuestInfo() {
   const [imagesPreloaded, setImagesPreloaded] = useState(false)
   const [editForm, setEditForm] = useState({
     rsvp_status: 'pending',
-    overnight_stay: false,
     dietary_restrictions: '',
     special_requests: '',
   })
@@ -102,7 +101,6 @@ export default function GuestInfo() {
     if (guestProfile) {
       setEditForm({
         rsvp_status: guestProfile.rsvp_status || 'pending',
-        overnight_stay: guestProfile.overnight_stay || false,
         dietary_restrictions: guestProfile.dietary_restrictions || '',
         special_requests: guestProfile.special_requests || '',
       })
@@ -145,7 +143,6 @@ export default function GuestInfo() {
   const handleSaveChanges = () => {
     updateMutation.mutate({
       rsvp_status: editForm.rsvp_status,
-      overnight_stay: editForm.overnight_stay,
       dietary_restrictions: editForm.dietary_restrictions,
       special_requests: editForm.special_requests,
     })
@@ -399,10 +396,6 @@ export default function GuestInfo() {
                       <span style={{ color: 'var(--wp-primary)', opacity: 0.8 }}>{t('guestInfoGuests')}</span>
                       <span className="font-semibold" style={{ color: 'var(--wp-primary)' }}>{guestProfile?.number_of_guests || 1}</span>
                     </div>
-                    <div className="flex items-center justify-between gap-4 py-3 border-b border-black/10">
-                      <span style={{ color: 'var(--wp-primary)', opacity: 0.8 }}>{t('guestInfoOvernight')}</span>
-                      <span className="font-semibold" style={{ color: 'var(--wp-primary)' }}>{guestProfile?.overnight_stay ? t('yes') : t('no')}</span>
-                    </div>
                     <div className="py-3 border-b border-black/10">
                       <div className="flex items-center justify-between gap-4">
                         <span style={{ color: 'var(--wp-primary)', opacity: 0.8 }}>{t('guestInfoDietaryDetails')}</span>
@@ -469,62 +462,6 @@ export default function GuestInfo() {
                       </div>
                     </div>
 
-                    {/* Overnight Stay */}
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--wp-primary)' }}>
-                        {t('guestInfoOvernight')}
-                      </label>
-                      <div className="flex gap-3">
-                        <button
-                          type="button"
-                          onClick={() => setEditForm((p) => ({ ...p, overnight_stay: true }))}
-                          className={`flex-1 px-4 py-3 rounded-xl font-semibold border transition-all ${
-                            editForm.overnight_stay
-                              ? 'text-white'
-                              : 'bg-white border-black/10 hover:bg-black/5'
-                          }`}
-                          style={editForm.overnight_stay ? { backgroundColor: 'var(--wp-primary)' } : { color: 'var(--wp-primary)' }}
-                        >
-                          {t('yes')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditForm((p) => ({ ...p, overnight_stay: false }))}
-                          className={`flex-1 px-4 py-3 rounded-xl font-semibold border transition-all ${
-                            !editForm.overnight_stay
-                              ? 'text-white'
-                              : 'bg-white border-black/10 hover:bg-black/5'
-                          }`}
-                          style={!editForm.overnight_stay ? { backgroundColor: 'var(--wp-primary)' } : { color: 'var(--wp-primary)' }}
-                        >
-                          {t('no')}
-                        </button>
-                      </div>
-                      {/* Booking Link Hint when overnight_stay is yes */}
-                      {editForm.overnight_stay && (
-                        <div className="mt-3 p-3 rounded-xl" style={{ backgroundColor: 'var(--wp-primary-20)' }}>
-                          {readContent('guest_accommodation_booking_link') ? (
-                            <p className="text-sm" style={{ color: 'var(--wp-primary)' }}>
-                              {t('bookingLinkHint')}{' '}
-                              <a
-                                href={readContent('guest_accommodation_booking_link')}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="underline font-semibold"
-                                style={{ color: 'var(--wp-primary)' }}
-                              >
-                                {t('bookingLinkClick')}
-                              </a>
-                            </p>
-                          ) : (
-                            <p className="text-sm" style={{ color: 'var(--wp-primary)' }}>
-                              {t('bookingLinkComingSoon')}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
                     {/* Dietary Restrictions */}
                     <div>
                       <label className="block text-sm font-medium mb-2" style={{ color: 'var(--wp-primary)' }}>
@@ -584,7 +521,6 @@ export default function GuestInfo() {
                         if (guestProfile) {
                           setEditForm({
                             rsvp_status: guestProfile.rsvp_status || 'pending',
-                            overnight_stay: guestProfile.overnight_stay || false,
                             dietary_restrictions: guestProfile.dietary_restrictions || '',
                             special_requests: guestProfile.special_requests || '',
                           })
