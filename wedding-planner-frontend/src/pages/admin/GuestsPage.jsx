@@ -18,6 +18,7 @@ export default function GuestsPage() {
     email: '',
     phone: '',
     language: 'en',
+    invitee_names: [''],
   })
   const queryClient = useQueryClient()
   const [inviteType, setInviteType] = useState('individual') // individual | couple | group
@@ -126,6 +127,22 @@ export default function GuestsPage() {
     typeof email === 'string' && email.endsWith('@placeholder.local')
 
   const displayEmail = (email) => (email && !isPlaceholderEmail(email) ? email : '')
+
+  const buildEditInviteeNames = (guest) => {
+    const primaryFullName = [guest?.first_name, guest?.last_name].filter(Boolean).join(' ').trim()
+    const existing = Array.isArray(guest?.invitee_names)
+      ? guest.invitee_names.map((n) => (n || '').trim()).filter(Boolean)
+      : []
+
+    const next = existing.length ? [...existing] : (primaryFullName ? [primaryFullName] : [''])
+
+    // Keep a dedicated second slot for couple invites.
+    if (Number(guest?.number_of_guests || 1) === 2 && next.length < 2) {
+      next.push('')
+    }
+
+    return next
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -720,6 +737,7 @@ export default function GuestsPage() {
                               email: displayEmail(guest.email),
                               phone: guest.phone || '',
                               language: guest.language || 'en',
+                              invitee_names: buildEditInviteeNames(guest),
                             })
                           }}
                           className="text-blue-600 hover:text-blue-900 text-xs"
@@ -867,8 +885,27 @@ export default function GuestsPage() {
               className="p-6 space-y-4"
               onSubmit={(e) => {
                 e.preventDefault()
+                const primaryFullName = [editGuestForm.first_name, editGuestForm.last_name]
+                  .map((n) => (n || '').trim())
+                  .filter(Boolean)
+                  .join(' ')
+                const editedInvitees = (editGuestForm.invitee_names || [])
+                  .map((n) => (n || '').trim())
+                const secondName = editedInvitees[1] || ''
+                const normalizedInviteeNames = [primaryFullName, secondName].filter(Boolean)
+                const shouldSubmitInviteeNames =
+                  Number(editGuest.number_of_guests || 1) === 2 || normalizedInviteeNames.length > 1
+
+                const payload = {
+                  first_name: editGuestForm.first_name,
+                  last_name: editGuestForm.last_name,
+                  email: editGuestForm.email,
+                  phone: editGuestForm.phone,
+                  language: editGuestForm.language,
+                  ...(shouldSubmitInviteeNames ? { invitee_names: normalizedInviteeNames } : {}),
+                }
                 updateGuestMutation.mutate(
-                  { id: editGuest.id, data: editGuestForm },
+                  { id: editGuest.id, data: payload },
                   {
                     onSuccess: () => {
                       setEditGuest(null)
@@ -913,6 +950,28 @@ export default function GuestsPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+              {(Number(editGuest.number_of_guests || 1) === 2 || (editGuestForm.invitee_names || [])[1]) && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Second guest name</label>
+                  <input
+                    type="text"
+                    value={(editGuestForm.invitee_names || [])[1] || ''}
+                    onChange={(e) =>
+                      setEditGuestForm((p) => {
+                        const next = [...(p.invitee_names || [])]
+                        if (!next.length) {
+                          next.push([p.first_name, p.last_name].filter(Boolean).join(' ').trim())
+                        }
+                        while (next.length < 2) next.push('')
+                        next[1] = e.target.value
+                        return { ...p, invitee_names: next }
+                      })
+                    }
+                    placeholder="Name 2"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                 <input
