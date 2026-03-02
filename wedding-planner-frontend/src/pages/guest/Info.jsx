@@ -33,6 +33,7 @@ export default function GuestInfo() {
   const [imagesPreloaded, setImagesPreloaded] = useState(false)
   const [editForm, setEditForm] = useState({
     rsvp_status: 'pending',
+    attending_names: [],
     dietary_restrictions: '',
     special_requests: '',
   })
@@ -99,8 +100,21 @@ export default function GuestInfo() {
   // Populate edit form when profile loads
   useEffect(() => {
     if (guestProfile) {
+      const inviteeNames = Array.isArray(guestProfile.invitee_names)
+        ? guestProfile.invitee_names.map((n) => String(n || '').trim()).filter(Boolean)
+        : []
+      const explicitAttending = Array.isArray(guestProfile.attending_names)
+        ? guestProfile.attending_names.map((n) => String(n || '').trim()).filter(Boolean)
+        : []
+      let inferredAttending = explicitAttending
+      if (!inferredAttending.length && guestProfile.rsvp_status === 'confirmed') {
+        const count = Math.max(1, Number(guestProfile.number_of_guests || 1))
+        inferredAttending = inviteeNames.slice(0, Math.min(inviteeNames.length || 1, count))
+      }
+
       setEditForm({
         rsvp_status: guestProfile.rsvp_status || 'pending',
+        attending_names: inferredAttending,
         dietary_restrictions: guestProfile.dietary_restrictions || '',
         special_requests: guestProfile.special_requests || '',
       })
@@ -141,8 +155,18 @@ export default function GuestInfo() {
   })
 
   const handleSaveChanges = () => {
+    const inviteeNames = Array.isArray(guestProfile?.invitee_names)
+      ? guestProfile.invitee_names.map((n) => String(n || '').trim()).filter(Boolean)
+      : []
+    const hasMultipleInvitees = inviteeNames.length > 1
+    const cleanedAttending = (editForm.attending_names || []).filter((n) => inviteeNames.includes(n))
+    const resolvedStatus = hasMultipleInvitees
+      ? (cleanedAttending.length > 0 ? 'confirmed' : 'declined')
+      : editForm.rsvp_status
+
     updateMutation.mutate({
-      rsvp_status: editForm.rsvp_status,
+      rsvp_status: resolvedStatus,
+      attending_names: hasMultipleInvitees ? cleanedAttending : undefined,
       dietary_restrictions: editForm.dietary_restrictions,
       special_requests: editForm.special_requests,
     })
@@ -208,6 +232,17 @@ export default function GuestInfo() {
     if (status === 'declined') return t('no')
     return t('pending')
   }
+
+  const inviteeNames = useMemo(() => {
+    const names = Array.isArray(guestProfile?.invitee_names) ? guestProfile.invitee_names : []
+    const cleaned = names.map((n) => String(n || '').trim()).filter(Boolean)
+    if (cleaned.length) return cleaned
+    const primary = `${guestProfile?.first_name || ''} ${guestProfile?.last_name || ''}`.trim()
+    return primary ? [primary] : []
+  }, [guestProfile?.invitee_names, guestProfile?.first_name, guestProfile?.last_name])
+
+  const isCoupleInvite = inviteeNames.length === 2
+  const isGroupInvite = inviteeNames.length > 2
 
   // Display greeting: first names only. For couples, show both first names.
   const guestGreeting = useMemo(() => {
@@ -462,6 +497,102 @@ export default function GuestInfo() {
                       </div>
                     </div>
 
+                    {(isCoupleInvite || isGroupInvite) && (
+                      <div>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--wp-primary)' }}>
+                          {t('guestInfoWhoIsComing')}
+                        </label>
+                        {isCoupleInvite ? (
+                          <div className="space-y-2">
+                            <button
+                              type="button"
+                              onClick={() => setEditForm((p) => ({ ...p, attending_names: inviteeNames.slice(0, 2) }))}
+                              className={`w-full px-4 py-3 rounded-xl font-semibold border transition-all ${
+                                (editForm.attending_names || []).length === 2
+                                  ? 'text-white'
+                                  : 'bg-white border-black/10 hover:bg-black/5'
+                              }`}
+                              style={(editForm.attending_names || []).length === 2 ? { backgroundColor: 'var(--wp-primary)' } : { color: 'var(--wp-primary)' }}
+                            >
+                              {t('bothOfUs')}
+                            </button>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setEditForm((p) => ({ ...p, attending_names: [inviteeNames[0]] }))}
+                                className={`px-4 py-3 rounded-xl font-semibold border transition-all ${
+                                  (editForm.attending_names || []).length === 1 && (editForm.attending_names || [])[0] === inviteeNames[0]
+                                    ? 'text-white'
+                                    : 'bg-white border-black/10 hover:bg-black/5'
+                                }`}
+                                style={(editForm.attending_names || []).length === 1 && (editForm.attending_names || [])[0] === inviteeNames[0] ? { backgroundColor: 'var(--wp-primary)' } : { color: 'var(--wp-primary)' }}
+                              >
+                                {t('onlyName').replace('{{name}}', inviteeNames[0] || t('name1'))}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditForm((p) => ({ ...p, attending_names: [inviteeNames[1]] }))}
+                                className={`px-4 py-3 rounded-xl font-semibold border transition-all ${
+                                  (editForm.attending_names || []).length === 1 && (editForm.attending_names || [])[0] === inviteeNames[1]
+                                    ? 'text-white'
+                                    : 'bg-white border-black/10 hover:bg-black/5'
+                                }`}
+                                style={(editForm.attending_names || []).length === 1 && (editForm.attending_names || [])[0] === inviteeNames[1] ? { backgroundColor: 'var(--wp-primary)' } : { color: 'var(--wp-primary)' }}
+                              >
+                                {t('onlyName').replace('{{name}}', inviteeNames[1] || t('name2'))}
+                              </button>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setEditForm((p) => ({ ...p, attending_names: [] }))}
+                              className={`w-full px-4 py-3 rounded-xl font-semibold border transition-all ${
+                                (editForm.attending_names || []).length === 0
+                                  ? 'text-white'
+                                  : 'bg-white border-black/10 hover:bg-black/5'
+                              }`}
+                              style={(editForm.attending_names || []).length === 0 ? { backgroundColor: 'var(--wp-primary)' } : { color: 'var(--wp-primary)' }}
+                            >
+                              {t('no')}
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="space-y-2">
+                              {inviteeNames.map((name) => {
+                                const checked = (editForm.attending_names || []).includes(name)
+                                return (
+                                  <label
+                                    key={name}
+                                    className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-black/10 bg-white cursor-pointer"
+                                  >
+                                    <span style={{ color: 'var(--wp-primary)' }} className="font-medium">{name}</span>
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={() => {
+                                        setEditForm((p) => {
+                                          const set = new Set(p.attending_names || [])
+                                          if (set.has(name)) set.delete(name)
+                                          else set.add(name)
+                                          return { ...p, attending_names: Array.from(set) }
+                                        })
+                                      }}
+                                      className="w-5 h-5"
+                                    />
+                                  </label>
+                                )
+                              })}
+                            </div>
+                            <div className="mt-2 text-sm" style={{ color: 'var(--wp-primary)', opacity: 0.8 }}>
+                              {t('selectedCount')
+                                .replace('{{count}}', String((editForm.attending_names || []).length))
+                                .replace('{{max}}', String(inviteeNames.length))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
                     {/* Dietary Restrictions */}
                     <div>
                       <label className="block text-sm font-medium mb-2" style={{ color: 'var(--wp-primary)' }}>
@@ -519,8 +650,20 @@ export default function GuestInfo() {
                         setIsEditing(false)
                         // Reset form to current profile values
                         if (guestProfile) {
+                          const inviteeNames = Array.isArray(guestProfile.invitee_names)
+                            ? guestProfile.invitee_names.map((n) => String(n || '').trim()).filter(Boolean)
+                            : []
+                          const explicitAttending = Array.isArray(guestProfile.attending_names)
+                            ? guestProfile.attending_names.map((n) => String(n || '').trim()).filter(Boolean)
+                            : []
+                          let inferredAttending = explicitAttending
+                          if (!inferredAttending.length && guestProfile.rsvp_status === 'confirmed') {
+                            const count = Math.max(1, Number(guestProfile.number_of_guests || 1))
+                            inferredAttending = inviteeNames.slice(0, Math.min(inviteeNames.length || 1, count))
+                          }
                           setEditForm({
                             rsvp_status: guestProfile.rsvp_status || 'pending',
+                            attending_names: inferredAttending,
                             dietary_restrictions: guestProfile.dietary_restrictions || '',
                             special_requests: guestProfile.special_requests || '',
                           })
