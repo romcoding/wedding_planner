@@ -32,10 +32,6 @@ export default function GuestInfo() {
   const [isPageLoading, setIsPageLoading] = useState(true)
   const [imagesPreloaded, setImagesPreloaded] = useState(false)
   const [editForm, setEditForm] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
     rsvp_status: 'pending',
     dietary_restrictions: '',
     special_requests: '',
@@ -104,10 +100,6 @@ export default function GuestInfo() {
   useEffect(() => {
     if (guestProfile) {
       setEditForm({
-        first_name: guestProfile.first_name || '',
-        last_name: guestProfile.last_name || '',
-        email: guestProfile.email || '',
-        phone: guestProfile.phone || '',
         rsvp_status: guestProfile.rsvp_status || 'pending',
         dietary_restrictions: guestProfile.dietary_restrictions || '',
         special_requests: guestProfile.special_requests || '',
@@ -150,10 +142,6 @@ export default function GuestInfo() {
 
   const handleSaveChanges = () => {
     updateMutation.mutate({
-      first_name: editForm.first_name,
-      last_name: editForm.last_name,
-      email: editForm.email,
-      phone: editForm.phone,
       rsvp_status: editForm.rsvp_status,
       dietary_restrictions: editForm.dietary_restrictions,
       special_requests: editForm.special_requests,
@@ -401,20 +389,6 @@ export default function GuestInfo() {
                   {/* Display current answers */}
                   <div className="mt-8 space-y-4 text-left">
                     <div className="flex items-center justify-between gap-4 py-3 border-b border-black/10">
-                      <span style={{ color: 'var(--wp-primary)', opacity: 0.8 }}>{t('guestInfoName')}</span>
-                      <span className="font-semibold" style={{ color: 'var(--wp-primary)' }}>
-                        {[guestProfile?.first_name, guestProfile?.last_name].filter(Boolean).join(' ') || '—'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4 py-3 border-b border-black/10">
-                      <span style={{ color: 'var(--wp-primary)', opacity: 0.8 }}>{t('guestInfoEmail')}</span>
-                      <span className="font-semibold break-all" style={{ color: 'var(--wp-primary)' }}>{guestProfile?.email || '—'}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4 py-3 border-b border-black/10">
-                      <span style={{ color: 'var(--wp-primary)', opacity: 0.8 }}>{t('guestInfoPhone')}</span>
-                      <span className="font-semibold" style={{ color: 'var(--wp-primary)' }}>{guestProfile?.phone || '—'}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4 py-3 border-b border-black/10">
                       <span style={{ color: 'var(--wp-primary)', opacity: 0.8 }}>{t('guestInfoComing')}</span>
                       <span className="font-semibold" style={{ color: 'var(--wp-primary)' }}>{getStatusLabel(guestProfile?.rsvp_status)}</span>
                     </div>
@@ -455,59 +429,6 @@ export default function GuestInfo() {
                 <>
                   {/* Editable form */}
                   <div className="mt-8 space-y-6 text-left">
-                    {/* Contact Details */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--wp-primary)' }}>
-                          {t('guestInfoFirstName')}
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.first_name}
-                          onChange={(e) => setEditForm((p) => ({ ...p, first_name: e.target.value }))}
-                          className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white"
-                          style={{ color: 'var(--wp-primary)', outline: 'none' }}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--wp-primary)' }}>
-                          {t('guestInfoLastName')}
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.last_name}
-                          onChange={(e) => setEditForm((p) => ({ ...p, last_name: e.target.value }))}
-                          className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white"
-                          style={{ color: 'var(--wp-primary)', outline: 'none' }}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--wp-primary)' }}>
-                        {t('guestInfoEmail')}
-                      </label>
-                      <input
-                        type="email"
-                        value={editForm.email}
-                        onChange={(e) => setEditForm((p) => ({ ...p, email: e.target.value }))}
-                        placeholder={t('guestInfoEmailPlaceholder')}
-                        className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white"
-                        style={{ color: 'var(--wp-primary)', outline: 'none' }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--wp-primary)' }}>
-                        {t('guestInfoPhone')}
-                      </label>
-                      <input
-                        type="tel"
-                        value={editForm.phone}
-                        onChange={(e) => setEditForm((p) => ({ ...p, phone: e.target.value }))}
-                        className="w-full px-4 py-3 rounded-xl border border-black/10 bg-white"
-                        style={{ color: 'var(--wp-primary)', outline: 'none' }}
-                      />
-                    </div>
-
                     {/* Attendance Decision - First Field */}
                     <div>
                       <label className="block text-sm font-medium mb-2" style={{ color: 'var(--wp-primary)' }}>
@@ -599,10 +520,6 @@ export default function GuestInfo() {
                         // Reset form to current profile values
                         if (guestProfile) {
                           setEditForm({
-                            first_name: guestProfile.first_name || '',
-                            last_name: guestProfile.last_name || '',
-                            email: guestProfile.email || '',
-                            phone: guestProfile.phone || '',
                             rsvp_status: guestProfile.rsvp_status || 'pending',
                             dietary_restrictions: guestProfile.dietary_restrictions || '',
                             special_requests: guestProfile.special_requests || '',
