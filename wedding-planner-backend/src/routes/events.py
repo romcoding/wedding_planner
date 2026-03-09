@@ -1,10 +1,12 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.models import db, Event, User, Content, Venue
 from src.utils.jwt_helpers import get_admin_id
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from src.utils.rbac import require_roles
+import hashlib
+import json
 
 events_bp = Blueprint('events', __name__)
 
@@ -265,7 +267,7 @@ def get_guest_portal_settings():
         c = items.get(key)
         return (c.content_en or c.content or '') if c else ''
 
-    return jsonify({
+    payload = {
         'guestEventId': one('guest_event_gifts_event_id'),
         'guestEventLabel': pack('guest_event_gifts_event_label'),
         'guestEventDetails': pack('guest_event_gifts_timeline_details'),
@@ -292,7 +294,12 @@ def get_guest_portal_settings():
         'witnesses': one('guest_witnesses'),
         # Bride & Groom contact cards
         'coupleCards': one('guest_couple_cards'),
-    }), 200
+    }
+    response = make_response(jsonify(payload), 200)
+    response.headers['Cache-Control'] = 'private, max-age=60'
+    response.set_etag(hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode('utf-8')).hexdigest())
+    response.make_conditional(request)
+    return response
 
 
 @events_bp.route('/guest-portal-settings', methods=['POST'])

@@ -38,7 +38,7 @@ Fill in the following settings:
   ```
 - **Start Command**: 
   ```
-  cd wedding-planner-backend && python src/main.py
+  cd wedding-planner-backend && PYTHONPATH=$(pwd):$PYTHONPATH gunicorn --bind 0.0.0.0:$PORT --workers ${GUNICORN_WORKERS:-1} --timeout ${GUNICORN_TIMEOUT:-90} --max-requests ${GUNICORN_MAX_REQUESTS:-500} --max-requests-jitter ${GUNICORN_MAX_REQUESTS_JITTER:-50} 'src.main:create_app()'
   ```
 
 ### Advanced Settings (Click to expand)

@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_compress import Compress
 from dotenv import load_dotenv
 import os
 import logging
@@ -59,6 +60,9 @@ def create_app():
     except ValueError:
         max_upload_mb = 25
     app.config['MAX_CONTENT_LENGTH'] = max_upload_mb * 1024 * 1024
+    app.config['COMPRESS_MIMETYPES'] = ['application/json', 'text/json', 'text/html', 'text/plain', 'text/css', 'application/javascript']
+    app.config['COMPRESS_LEVEL'] = int(os.getenv('COMPRESS_LEVEL', '6'))
+    app.config['COMPRESS_MIN_SIZE'] = int(os.getenv('COMPRESS_MIN_SIZE', '1024'))
     
     # Database configuration
     database_url = os.getenv('DATABASE_URL')
@@ -121,6 +125,7 @@ def create_app():
     # Initialize extensions
     db.init_app(app)
     jwt = JWTManager(app)
+    Compress(app)
     
     # Add error handlers for JWT
     @jwt.expired_token_loader

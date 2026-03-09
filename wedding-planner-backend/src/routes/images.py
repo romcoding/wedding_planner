@@ -1,18 +1,27 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.models import db, Image, User
 from src.utils.jwt_helpers import get_admin_id
 from src.utils.rbac import require_roles
 from sqlalchemy.exc import IntegrityError
 import base64
+import hashlib
+import json
 from io import BytesIO
 from PIL import Image as PILImage
 
 images_bp = Blueprint('images', __name__)
 
+def _safe_int(value, default, minimum=1, maximum=100):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    return max(min(parsed, maximum), minimum)
+
 @images_bp.route('/api/images', methods=['GET'])
 def get_images():
-    """Get all images (public images for guests, all for admins)"""
+    """Get images with bounded payload size and optional pagination."""
     # Check if user is authenticated (admin)
     auth_header = request.headers.get('Authorization')
     is_admin = False
@@ -40,14 +49,36 @@ def get_images():
             # If token decode fails, treat as guest
             pass
     
-    if is_admin:
-        # Admins see all images
-        images = Image.query.order_by(Image.order, Image.created_at.desc()).all()
-    else:
-        # Guests see only public, active images
-        images = Image.query.filter_by(is_public=True, is_active=True).order_by(Image.order, Image.created_at.desc()).all()
-    
-    return jsonify([img.to_dict() for img in images]), 200
+    page = _safe_int(request.args.get('page', 1), default=1, minimum=1, maximum=100000)
+    # Keep page size conservative to avoid OOM/large response bursts.
+    per_page = _safe_int(request.args.get('per_page', 20), default=20, minimum=1, maximum=100)
+    include_data_urls = request.args.get('include_data_urls', 'false').lower() == 'true'
+
+    query = Image.query.order_by(Image.order, Image.created_at.desc())
+    if not is_admin:
+        query = query.filter_by(is_public=True, is_active=True)
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    def serialize_image(image):
+        payload = image.to_dict()
+        # Inline base64 data URLs can be huge. Exclude by default on list requests.
+        if not include_data_urls and isinstance(payload.get('url'), str) and payload['url'].startswith('data:'):
+            payload['url'] = None
+            payload['has_inline_data_url'] = True
+        return payload
+
+    payload = [serialize_image(img) for img in pagination.items]
+    response = make_response(jsonify(payload), 200)
+    response.headers['X-Total-Count'] = str(pagination.total)
+    response.headers['X-Page'] = str(page)
+    response.headers['X-Per-Page'] = str(per_page)
+    response.headers['X-Has-More'] = 'true' if pagination.has_next else 'false'
+    response.headers['Cache-Control'] = 'public, max-age=60, stale-while-revalidate=300'
+    etag = hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode('utf-8')).hexdigest()
+    response.set_etag(etag)
+    response.make_conditional(request)
+    return response
 
 @images_bp.route('/api/images/<int:image_id>', methods=['GET'])
 def get_image(image_id):

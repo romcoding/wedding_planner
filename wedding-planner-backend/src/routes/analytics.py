@@ -78,16 +78,16 @@ def get_dietary():
     all_restrictions = []
     all_allergies = []
     
-    guests = Guest.query.filter(
+    guests = db.session.query(Guest.dietary_restrictions, Guest.allergies).filter(
         Guest.dietary_restrictions.isnot(None),
         Guest.dietary_restrictions != ''
     ).all()
     
-    for guest in guests:
-        if guest.dietary_restrictions:
-            all_restrictions.append(guest.dietary_restrictions)
-        if guest.allergies:
-            all_allergies.append(guest.allergies)
+    for dietary_restrictions, allergies in guests:
+        if dietary_restrictions:
+            all_restrictions.append(dietary_restrictions)
+        if allergies:
+            all_allergies.append(allergies)
     
     return jsonify({
         'summary': {
@@ -205,17 +205,14 @@ def get_site_stats():
     # Total page views
     total_page_views = PageView.query.filter(PageView.viewed_at >= start_date).count()
     
-    # Average session duration
-    completed_visits = Visit.query.filter(
+    # Average session duration (computed in DB to avoid loading full visit rows)
+    avg_duration = db.session.query(
+        func.avg(Visit.duration_seconds)
+    ).filter(
         Visit.started_at >= start_date,
         Visit.ended_at.isnot(None),
         Visit.duration_seconds.isnot(None)
-    ).all()
-    
-    avg_duration = 0
-    if completed_visits:
-        total_duration = sum(v.duration_seconds or 0 for v in completed_visits)
-        avg_duration = total_duration / len(completed_visits)
+    ).scalar() or 0
     
     # Bounce rate (sessions with only 1 page view)
     single_page_visits = Visit.query.filter(

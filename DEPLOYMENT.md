@@ -31,7 +31,7 @@ This guide explains how to deploy the Wedding Planner application to Render (bac
    - **Name**: `wedding-planner-backend`
    - **Environment**: `Python 3`
    - **Build Command**: `pip install -r wedding-planner-backend/requirements.txt`
-   - **Start Command**: `cd wedding-planner-backend && python src/main.py`
+   - **Start Command**: `cd wedding-planner-backend && PYTHONPATH=$(pwd):$PYTHONPATH gunicorn --bind 0.0.0.0:$PORT --workers ${GUNICORN_WORKERS:-1} --timeout ${GUNICORN_TIMEOUT:-90} --max-requests ${GUNICORN_MAX_REQUESTS:-500} --max-requests-jitter ${GUNICORN_MAX_REQUESTS_JITTER:-50} 'src.main:create_app()'`
    - **Root Directory**: Leave empty (or set to repository root)
 
 4. Add Environment Variables:
@@ -147,6 +147,22 @@ Both Render and Vercel support custom domains. Configure them in their respectiv
 - **Render**: Check logs in the Render dashboard
 - **Vercel**: Check logs in the Vercel dashboard
 - **Database**: Monitor in Render PostgreSQL dashboard
+
+### Post-deploy endpoint stability check
+
+Run a quick smoke check:
+
+```bash
+cd wedding-planner-backend
+python3 verify_render_stability.py --base-url https://your-backend-url.onrender.com
+```
+
+Run 24-hour monitoring (every 5 minutes) and export CSV:
+
+```bash
+cd wedding-planner-backend
+python3 verify_render_stability.py --base-url https://your-backend-url.onrender.com --duration-hours 24 --interval-seconds 300 --csv render_stability_checks.csv
+```
 
 ## Security Notes
 

@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.models import db, Cost, User
 from datetime import datetime
+from sqlalchemy import func
 
 costs_bp = Blueprint('costs', __name__)
 
@@ -176,21 +177,30 @@ def get_cost_analytics():
     if not user:
         return jsonify({'error': 'User not found'}), 404
     
-    costs = Cost.query.filter_by(user_id=user_id).all()
-    
+    # Aggregate totals by category and status in DB to avoid loading all rows.
+    rows = db.session.query(
+        Cost.category,
+        Cost.status,
+        func.sum(Cost.amount).label('total')
+    ).filter_by(user_id=user_id).group_by(Cost.category, Cost.status).all()
+
     # Calculate totals by category and status
     category_totals = {}
     status_totals = {'planned': 0, 'pending': 0, 'paid': 0}
     
-    for cost in costs:
-        category = cost.category or 'other'
+    for category, status, total in rows:
+        category = category or 'other'
         if category not in category_totals:
             category_totals[category] = {'planned': 0, 'pending': 0, 'paid': 0, 'total': 0}
-        
-        amount = float(cost.amount)
-        category_totals[category][cost.status] += amount
+
+        amount = float(total or 0)
+        if status not in category_totals[category]:
+            category_totals[category][status] = 0
+        if status not in status_totals:
+            status_totals[status] = 0
+        category_totals[category][status] += amount
         category_totals[category]['total'] += amount
-        status_totals[cost.status] += amount
+        status_totals[status] += amount
     
     # Calculate percentages and alerts
     total_planned = status_totals['planned']

@@ -12,6 +12,13 @@ from src.utils.rbac import require_roles
 guests_bp = Blueprint('guests', __name__)
 logger = logging.getLogger(__name__)
 
+def _safe_int(value, default, minimum=1, maximum=1000):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    return max(min(parsed, maximum), minimum)
+
 @guests_bp.route('/update-rsvp', methods=['PUT'])
 @jwt_required()
 def update_rsvp():
@@ -179,7 +186,7 @@ def create_guest():
 @guests_bp.route('', methods=['GET'])
 @jwt_required()
 def get_guests():
-    """Get all guests (admin/planner)"""
+    """Get guests (admin/planner) with pagination to avoid oversized payloads."""
     user, err = require_roles(['admin', 'planner'])
     if err:
         return err
@@ -195,7 +202,10 @@ def get_guests():
     if overnight_stay is not None:
         query = query.filter_by(overnight_stay=overnight_stay.lower() == 'true')
     
-    guests = query.order_by(Guest.registered_at.desc()).all()
+    page = _safe_int(request.args.get('page', 1), default=1, minimum=1, maximum=100000)
+    per_page = _safe_int(request.args.get('per_page', 100), default=100, minimum=1, maximum=500)
+    pagination = query.order_by(Guest.registered_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    guests = pagination.items
     
     # Include RSVP links for admin
     import os
@@ -213,7 +223,12 @@ def get_guests():
         guest_dict['rsvp_link'] = f"{frontend_url}/rsvp/{guest.unique_token}" if guest.unique_token else None
         guests_data.append(guest_dict)
     
-    return jsonify(guests_data), 200
+    response = jsonify(guests_data)
+    response.headers['X-Total-Count'] = str(pagination.total)
+    response.headers['X-Page'] = str(page)
+    response.headers['X-Per-Page'] = str(per_page)
+    response.headers['X-Has-More'] = 'true' if pagination.has_next else 'false'
+    return response, 200
 
 @guests_bp.route('/export', methods=['GET'])
 @jwt_required()

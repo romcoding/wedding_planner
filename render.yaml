@@ -4,7 +4,8 @@ services:
     name: wedding-planner-backend
     env: python
     buildCommand: pip install -r wedding-planner-backend/requirements.txt
-    startCommand: cd wedding-planner-backend && PYTHONPATH=$(pwd):$PYTHONPATH gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 'src.main:create_app()'
+    startCommand: cd wedding-planner-backend && PYTHONPATH=$(pwd):$PYTHONPATH gunicorn --bind 0.0.0.0:$PORT --workers ${GUNICORN_WORKERS:-1} --timeout ${GUNICORN_TIMEOUT:-90} --max-requests ${GUNICORN_MAX_REQUESTS:-500} --max-requests-jitter ${GUNICORN_MAX_REQUESTS_JITTER:-50} 'src.main:create_app()'
+    healthCheckPath: /api/health
     rootDir: .
     envVars:
       - key: DATABASE_URL
@@ -19,13 +20,22 @@ services:
         sync: false
       - key: PORT
         value: 10000
+      - key: GUNICORN_WORKERS
+        value: 1
+      - key: GUNICORN_TIMEOUT
+        value: 90
+      - key: GUNICORN_MAX_REQUESTS
+        value: 500
+      - key: GUNICORN_MAX_REQUESTS_JITTER
+        value: 50
 
   # Development backend
   - type: web
     name: wedding-planner-backend-dev
     env: python
     buildCommand: pip install -r wedding-planner-backend/requirements.txt
-    startCommand: cd wedding-planner-backend && PYTHONPATH=$(pwd):$PYTHONPATH gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 120 'src.main:create_app()'
+    startCommand: cd wedding-planner-backend && PYTHONPATH=$(pwd):$PYTHONPATH gunicorn --bind 0.0.0.0:$PORT --workers ${GUNICORN_WORKERS:-1} --timeout ${GUNICORN_TIMEOUT:-90} --max-requests ${GUNICORN_MAX_REQUESTS:-300} --max-requests-jitter ${GUNICORN_MAX_REQUESTS_JITTER:-30} 'src.main:create_app()'
+    healthCheckPath: /api/health
     rootDir: .
     envVars:
       - key: DATABASE_URL
@@ -40,6 +50,14 @@ services:
         value: https://weddingplanner-mu.vercel.app
       - key: PORT
         value: 10000
+      - key: GUNICORN_WORKERS
+        value: 1
+      - key: GUNICORN_TIMEOUT
+        value: 90
+      - key: GUNICORN_MAX_REQUESTS
+        value: 300
+      - key: GUNICORN_MAX_REQUESTS_JITTER
+        value: 30
 
 databases:
   # Development database

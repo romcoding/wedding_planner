@@ -1,20 +1,37 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from src.models import db, Content, User
 from src.utils.jwt_helpers import get_admin_id
 from src.services.translation_service import TranslationService
+import hashlib
+import json
 
 content_bp = Blueprint('content', __name__)
+
+def _safe_int(value, default, minimum=1, maximum=500):
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    return max(min(parsed, maximum), minimum)
 
 @content_bp.route('', methods=['GET'])
 def get_content():
     """Get public content (no auth required) or all content (admin)"""
     is_public_only = not request.args.get('admin', '').lower() == 'true'
     language = request.args.get('lang', 'en')  # Get language parameter
+    include_all_languages = request.args.get('include_all_languages', 'false').lower() == 'true'
+    page = _safe_int(request.args.get('page', 1), default=1, minimum=1, maximum=100000)
+    per_page = _safe_int(request.args.get('per_page', 100), default=100, minimum=1, maximum=500)
     
     if is_public_only:
         # Public endpoint - only return public content
-        contents = Content.query.filter_by(is_public=True).order_by(Content.order.asc()).all()
+        pagination = Content.query.filter_by(is_public=True).order_by(Content.order.asc()).paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
+        contents = pagination.items
     else:
         # Check if user is authenticated for admin access
         try:
@@ -31,7 +48,12 @@ def get_content():
                 return jsonify({'error': 'Unauthorized'}), 401
             
             # Return all content for admin (with all languages)
-            contents = Content.query.order_by(Content.order.asc()).all()
+            pagination = Content.query.order_by(Content.order.asc()).paginate(
+                page=page,
+                per_page=per_page,
+                error_out=False
+            )
+            contents = pagination.items
         except:
             return jsonify({'error': 'Unauthorized'}), 401
     
@@ -47,9 +69,33 @@ def get_content():
             if content.scheduled_unpublish_at and content.scheduled_unpublish_at <= now:
                 continue  # Already unpublished
             filtered_contents.append(content)
-        return jsonify([content.to_dict(language=language) for content in filtered_contents]), 200
+        payload = [
+            content.to_dict(language=language, include_all_languages=include_all_languages)
+            for content in filtered_contents
+        ]
+        response = make_response(jsonify(payload), 200)
+        response.headers['X-Total-Count'] = str(pagination.total)
+        response.headers['X-Page'] = str(page)
+        response.headers['X-Per-Page'] = str(per_page)
+        response.headers['X-Has-More'] = 'true' if pagination.has_next else 'false'
+        response.headers['Cache-Control'] = 'public, max-age=120, stale-while-revalidate=600'
+        response.set_etag(hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode('utf-8')).hexdigest())
+        response.make_conditional(request)
+        return response
     else:
-        return jsonify([content.to_dict() for content in contents]), 200
+        payload = [
+            content.to_dict(language=language, include_all_languages=True)
+            for content in contents
+        ]
+        response = make_response(jsonify(payload), 200)
+        response.headers['X-Total-Count'] = str(pagination.total)
+        response.headers['X-Page'] = str(page)
+        response.headers['X-Per-Page'] = str(per_page)
+        response.headers['X-Has-More'] = 'true' if pagination.has_next else 'false'
+        response.headers['Cache-Control'] = 'private, max-age=60'
+        response.set_etag(hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode('utf-8')).hexdigest())
+        response.make_conditional(request)
+        return response
 
 @content_bp.route('/<string:key>', methods=['GET'])
 def get_content_by_key(key):
@@ -77,7 +123,8 @@ def get_content_by_key(key):
             return jsonify({'error': 'Unauthorized'}), 401
     
     language = request.args.get('lang', 'en')
-    return jsonify(content.to_dict(language=language)), 200
+    include_all_languages = request.args.get('include_all_languages', 'false').lower() == 'true'
+    return jsonify(content.to_dict(language=language, include_all_languages=include_all_languages)), 200
 
 @content_bp.route('', methods=['POST'])
 @jwt_required()

@@ -25,7 +25,7 @@ class Content(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    def to_dict(self, language='en'):
+    def to_dict(self, language='en', include_all_languages=False):
         """Convert content to dictionary"""
         # Get content for specified language, fallback to legacy content or English
         content_text = None
@@ -40,14 +40,11 @@ class Content(db.Model):
         if not content_text:
             content_text = self.content_en or self.content
         
-        return {
+        result = {
             'id': self.id,
             'key': self.key,
             'title': self.title,
             'content': content_text,
-            'content_en': self.content_en or self.content,
-            'content_de': self.content_de,
-            'content_fr': self.content_fr,
             'content_type': self.content_type,
             'is_public': self.is_public,
             'order': self.order,
@@ -57,4 +54,9 @@ class Content(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+        if include_all_languages:
+            result['content_en'] = self.content_en or self.content
+            result['content_de'] = self.content_de
+            result['content_fr'] = self.content_fr
+        return result
 
