@@ -42,7 +42,7 @@ export default function GuestHome() {
   // Fetch images from API
   const { data: images, isLoading: imagesLoading } = useQuery({
     queryKey: ['images'],
-    queryFn: () => api.get('/images').then((res) => res.data),
+    queryFn: () => api.get('/images?include_data_urls=true&per_page=100').then((res) => res.data),
   })
 
   // Populate form with guest data if logged in

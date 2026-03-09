@@ -322,7 +322,7 @@ export default function RSVP({ token: tokenOverride, embedded = false, onClose }
   // Fetch images
   const { data: images } = useQuery({
     queryKey: ['images'],
-    queryFn: () => api.get('/images').then((res) => res.data),
+    queryFn: () => api.get('/images?include_data_urls=true&per_page=100').then((res) => res.data),
   })
 
   // Get images

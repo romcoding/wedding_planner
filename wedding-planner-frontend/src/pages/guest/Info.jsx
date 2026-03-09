@@ -63,7 +63,7 @@ export default function GuestInfo() {
   // Fetch images for carousel (all positions except moodboard)
   const { data: allImages, isFetched: imagesFetched } = useQuery({
     queryKey: ['images'],
-    queryFn: () => api.get('/images').then((res) => res.data),
+    queryFn: () => api.get('/images?include_data_urls=true&per_page=100').then((res) => res.data),
   })
 
   // Fetch agenda items for timeline
