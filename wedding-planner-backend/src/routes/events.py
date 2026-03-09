@@ -259,8 +259,9 @@ def get_guest_portal_settings():
         c = items.get(key)
         return {
             'en': (c.content_en or c.content or '') if c else '',
-            'de': (c.content_de or c.content or '') if c else '',
-            'fr': (c.content_fr or c.content or '') if c else '',
+            # Keep DE/FR isolated to avoid backfilling from legacy EN content.
+            'de': (c.content_de or '') if c else '',
+            'fr': (c.content_fr or '') if c else '',
         }
 
     def one(key):

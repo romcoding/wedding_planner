@@ -178,10 +178,15 @@ export default function GuestInfo() {
     return String(v)
   }
 
-  // Strip HTML tags for plain text display (e.g., IBAN)
+  // Strip HTML tags for plain text display while keeping line breaks.
   const stripHtml = (html) => {
     if (!html) return ''
-    return html.replace(/<[^>]*>/g, '').trim()
+    return String(html)
+      .replace(/<\s*br\s*\/?>/gi, '\n')
+      .replace(/<\/\s*(p|div|li|h1|h2|h3|h4|h5|h6)\s*>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
   }
 
   // Copy IBAN to clipboard
@@ -324,6 +329,9 @@ export default function GuestInfo() {
     { id: 'photos', label: t('guestNavPhotos') },
     { id: 'contact', label: t('guestNavContact') },
   ]
+
+  const dresscodeText = stripHtml(readContent('guest_dresscode'))
+  const agendaText = stripHtml(readContent('guest_agenda'))
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F7F3EA' }}>
@@ -927,14 +935,14 @@ export default function GuestInfo() {
                   )}
 
                   {/* Dresscode */}
-                  {readContent('guest_dresscode') && (
+                  {dresscodeText && (
                     <div>
                       <div className="flex items-center justify-center gap-2 mb-3">
                         <Shirt className="w-5 h-5" style={{ color: 'var(--wp-primary)' }} />
                         <div className="text-sm font-medium" style={{ color: 'var(--wp-primary)', opacity: 0.7 }}>{t('dresscodeLabel') || 'Dresscode'}</div>
                       </div>
                       <div className="whitespace-pre-wrap break-words" style={{ color: 'var(--wp-primary)' }}>
-                        {readContent('guest_dresscode')}
+                        {dresscodeText}
                       </div>
                       {/* Mood color dots */}
                       <div className="mt-3 flex items-center justify-center gap-2">
@@ -1008,10 +1016,10 @@ export default function GuestInfo() {
                 )}
 
                 {/* Detailed Agenda (fallback if no agenda items) */}
-                {(!agendaItems || agendaItems.length === 0) && readContent('guest_agenda') && (
+                {(!agendaItems || agendaItems.length === 0) && agendaText && (
                   <div className="pt-6 border-t border-black/10 text-center">
                     <div className="whitespace-pre-wrap break-words" style={{ color: 'var(--wp-primary)' }}>
-                      {readContent('guest_agenda')}
+                      {agendaText}
                     </div>
                   </div>
                 )}

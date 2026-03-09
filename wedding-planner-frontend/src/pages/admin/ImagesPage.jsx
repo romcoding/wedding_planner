@@ -154,6 +154,11 @@ const ImagesPage = () => {
   const [coupleCards, setCoupleCards] = useState([])
   
   const didInitGuestCardsRef = useRef(false)
+  const normalizeLocalized = (value) => ({
+    en: String(value?.en ?? ''),
+    de: String(value?.de ?? ''),
+    fr: String(value?.fr ?? ''),
+  })
 
   const { data: contentItems } = useQuery({
     queryKey: ['content', 'admin'],
@@ -311,47 +316,19 @@ const ImagesPage = () => {
     if (didInitGuestCardsRef.current) return
     if (!guestPortalSettings) return
     setGuestEventId(String(guestPortalSettings.guestEventId || ''))
-    setGuestEventDetails({
-      en: String(guestPortalSettings.guestEventDetails?.en || ''),
-      de: String(guestPortalSettings.guestEventDetails?.de || ''),
-      fr: String(guestPortalSettings.guestEventDetails?.fr || ''),
-    })
+    setGuestEventDetails(normalizeLocalized(guestPortalSettings.guestEventDetails))
     setGuestTimelineVenueId(String(guestPortalSettings.guestTimelineVenueId || ''))
-    setGuestAgenda({
-      en: String(guestPortalSettings.guestAgenda?.en || ''),
-      de: String(guestPortalSettings.guestAgenda?.de || ''),
-      fr: String(guestPortalSettings.guestAgenda?.fr || ''),
-    })
-    setGuestDresscode({
-      en: String(guestPortalSettings.guestDresscode?.en || ''),
-      de: String(guestPortalSettings.guestDresscode?.de || ''),
-      fr: String(guestPortalSettings.guestDresscode?.fr || ''),
-    })
+    setGuestAgenda(normalizeLocalized(guestPortalSettings.guestAgenda))
+    setGuestDresscode(normalizeLocalized(guestPortalSettings.guestDresscode))
     setGuestAccommodationVenueId(String(guestPortalSettings.guestAccommodationVenueId || ''))
-    setGuestAccommodationDetails({
-      en: String(guestPortalSettings.guestAccommodationDetails?.en || ''),
-      de: String(guestPortalSettings.guestAccommodationDetails?.de || ''),
-      fr: String(guestPortalSettings.guestAccommodationDetails?.fr || ''),
-    })
+    setGuestAccommodationDetails(normalizeLocalized(guestPortalSettings.guestAccommodationDetails))
     setGuestAccommodationBookingLink(String(guestPortalSettings.guestAccommodationBookingLink || ''))
     setGuestAccommodationPromoCode(String(guestPortalSettings.guestAccommodationPromoCode || ''))
     
     // Gift Registry
-    setGiftIban({
-      en: String(guestPortalSettings.giftIban?.en || ''),
-      de: String(guestPortalSettings.giftIban?.de || ''),
-      fr: String(guestPortalSettings.giftIban?.fr || ''),
-    })
-    setGiftMessage({
-      en: String(guestPortalSettings.giftMessage?.en || ''),
-      de: String(guestPortalSettings.giftMessage?.de || ''),
-      fr: String(guestPortalSettings.giftMessage?.fr || ''),
-    })
-    setGiftAccountHolder({
-      en: String(guestPortalSettings.giftAccountHolder?.en || ''),
-      de: String(guestPortalSettings.giftAccountHolder?.de || ''),
-      fr: String(guestPortalSettings.giftAccountHolder?.fr || ''),
-    })
+    setGiftIban(normalizeLocalized(guestPortalSettings.giftIban))
+    setGiftMessage(normalizeLocalized(guestPortalSettings.giftMessage))
+    setGiftAccountHolder(normalizeLocalized(guestPortalSettings.giftAccountHolder))
     
     // Witnesses
     try {
